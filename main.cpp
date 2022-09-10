@@ -88,6 +88,47 @@ void addStudent()
     studentFile.close();
 }
 
+class Teacher
+{
+private:
+    string name, subject, qualification;
+    short experience, classTaught;
+
+public:
+    void inputTeacherDetails();
+    int generateTeacherID();
+};
+
+int Teacher::generateTeacherID() { return 0; }
+
+void Teacher::inputTeacherDetails()
+{
+    system("cls");
+    cout << "\Enter teacher name (max. 28 characters): ";
+    cin.ignore();
+    getline(cin, name);
+    cout << "Enter the class to be taught (1 to 12): ";
+    cin >> classTaught;
+    cout << "Enter the subject to be taught: ";
+    cin.ignore();
+    getline(cin, subject);
+    cout << "Enter teacher work experience (in years): ";
+    cin >> experience;
+    cout << "Enter teacher educational qualification: ";
+    cin.ignore();
+    getline(cin, qualification);
+    cout << "\nGenerated teacher ID is " << generateTeacherID() << ". Please note it in a safe place for future reference.";
+}
+
+void addTeacher()
+{
+    Teacher schoolTeacher;
+    fstream teacherFile("data/teacher.dat", ios::in | ios::out | ios::app | ios::binary);
+    schoolTeacher.inputTeacherDetails();
+    teacherFile.write((char*)&schoolTeacher, sizeof(schoolTeacher));
+    teacherFile.close();
+}
+
 // displays home screen only if the administrator has entered the correct credentials
 // note: Administrator is anyone using our school management system app
 void HomeScreen()
@@ -110,7 +151,7 @@ void HomeScreen()
         addStudent();
         break;
     case 'b':
-        cout << "\nWork under progress...";
+        addTeacher();
         break;
     case 'c':
         cout << "\nWork under progress...";
