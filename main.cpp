@@ -1,6 +1,33 @@
 using namespace std;
 
 #include <iostream>
+#include <string>
+
+class Student
+{
+private:
+	int rollNumber, admissionNumber;
+	string studentName, motherName, fatherName;
+
+public:
+	void inputStudentDetails();
+};
+
+void Student::inputStudentDetails()
+{
+	cout << "\nEnter student name: ";
+	getline(cin, studentName);
+	cout << "Enter student's father's name: ";
+	getline(cin, fatherName);
+	cout << "Enter student's mother's name: ";
+	getline(cin, motherName);
+}
+
+void addStudent()
+{
+	Student schoolStudent;
+	schoolStudent.inputStudentDetails();
+}
 
 void displayHomeScreen()
 {
@@ -17,4 +44,5 @@ void displayHomeScreen()
 int main()
 {
 	displayHomeScreen();
+	addStudent();
 }
