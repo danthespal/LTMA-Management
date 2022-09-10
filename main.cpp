@@ -1,7 +1,9 @@
-#include <iostream>     // for basic input and output operations e.g. cin, cout, etc.
+#include <iostream>     // for basic I/O operations e.g. cin, cout, etc.
 #include <fstream>      // for data file handling
 #include <string>       // for string objects
-using namespace std;    // declares std namespace. so, we don't need to add 'std::' before cout, cin and other standard library methods
+#include "Header.h"     // contains utils required for proper I/O
+
+using namespace std;    // we don't need to add 'std::' before cout, cin and other standard library methods
 
 // student class has all the data members and required member functions for students
 class Student
@@ -91,33 +93,83 @@ void addStudent()
 class Teacher
 {
 private:
-    string name, subject, qualification;
-    short experience, classTaught;
+    string teacherName, teacherQualification;
+    short teacherExperience{}, teacherClass{};
+    char teacherSubject[11]{}, teacherId[5]{};
 
 public:
     void inputTeacherDetails();
-    int generateTeacherID();
+    void generateTeacherID();
 };
 
-int Teacher::generateTeacherID() { return 0; }
+void Teacher::generateTeacherID()
+{
+    Teacher schoolTeacherRead;
+    fstream teacherFile("data/teacher.dat", ios::in | ios::out | ios::app | ios::binary);
+    short flag = 0, id = 0;
+
+    while (teacherFile.read((char*)&schoolTeacherRead, sizeof(schoolTeacherRead)))
+    {
+        flag++;
+        if (strcmp(teacherSubject, schoolTeacherRead.teacherSubject) == 0)
+        {
+            id++;
+        }
+    }
+
+    if (id == 0 || flag == 0)
+    {
+        newTeacherId(teacherId, teacherSubject);
+    }
+
+    if (id != 0)
+    {
+        for (int i = 0, j = 48; i < 5; i++) // in ASCII char 48 = '0'
+        {
+            if (i < 3)
+            {
+                teacherId[i] = toupper(teacherSubject[i]);
+            }
+            else
+            {
+                if (((id % 10) == 9) && i == 3)
+                {
+                    teacherId[i] = j + ((id / 10) + 1);
+                    i++;
+                    teacherId[i] = j;
+                }
+                else if (i == 3)
+                {
+                    teacherId[i] = j + (id / 10);
+                    i++;
+                    teacherId[i] = j + ((id % 10) + 1);
+                }
+            }
+        }
+    }
+}
 
 void Teacher::inputTeacherDetails()
 {
     system("cls");
-    cout << "\Enter teacher name (max. 28 characters): ";
+    cout << "\Enter teacher name: ";
     cin.ignore();
-    getline(cin, name);
+    getline(cin, teacherName);
     cout << "Enter the class to be taught (1 to 12): ";
-    cin >> classTaught;
+    cin >> teacherClass;
     cout << "Enter the subject to be taught: ";
     cin.ignore();
-    getline(cin, subject);
+    gets_s(teacherSubject);
+    convertCharArrayToLower(teacherSubject, sizeof(teacherSubject));
     cout << "Enter teacher work experience (in years): ";
-    cin >> experience;
+    cin >> teacherExperience;
     cout << "Enter teacher educational qualification: ";
     cin.ignore();
-    getline(cin, qualification);
-    cout << "\nGenerated teacher ID is " << generateTeacherID() << ". Please note it in a safe place for future reference.";
+    getline(cin, teacherQualification);
+    cout << "\nGenerated teacher ID is ";
+    generateTeacherID();
+    displayCharArray(teacherId, sizeof(teacherId));
+    cout << ". Please note it in a safe place for future reference.";
 }
 
 void addTeacher()
