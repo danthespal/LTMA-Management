@@ -139,14 +139,14 @@ void receiveStudentFee()
     system("cls");
     Student schoolStudent;
     int inputRollNumber = 0, amountToPay = 0, flag = 0;
-    long filePosition = 0;
+    streamoff filePosition = 0;
     char inputChoice;
     fstream studentFile("data/student.dat", ios::in | ios::out | ios::binary);
     cout << "Enter the roll number of student whose fees you want to receive (in RON): ";
     cin >> inputRollNumber;
     while (!studentFile.eof())
     {
-        filePosition = (long)studentFile.tellg();
+        filePosition = studentFile.tellg();
         studentFile.read((char*)&schoolStudent, sizeof(schoolStudent));
         if (inputRollNumber == schoolStudent.getRollNumber())
         {
