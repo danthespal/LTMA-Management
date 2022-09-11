@@ -18,6 +18,14 @@ void convertCharArrayToLower(char myArray[], short arraySize)
 	}
 }
 
+void convertCharArrayToUpper(char myArray[], short arraySize)
+{
+	for (int i = 0; i < arraySize; i++)
+	{
+		myArray[i] = toupper(myArray[i]);
+	}
+}
+
 void newTeacherId(char teacherId[], char teacherSubject[])
 {
 	for (int i = 0, j = 48; i < 5; i++)
