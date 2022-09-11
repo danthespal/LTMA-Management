@@ -146,7 +146,7 @@ void receiveStudentFee()
     cin >> inputRollNumber;
     while (!studentFile.eof())
     {
-        filePosition = studentFile.tellg();
+        filePosition = (long)studentFile.tellg();
         studentFile.read((char*)&schoolStudent, sizeof(schoolStudent));
         if (inputRollNumber == schoolStudent.getRollNumber())
         {
@@ -331,7 +331,8 @@ void removeTeacher()
     fileToRead.close();
     fileToWrite.close();
     remove("data/teacher.dat");
-    rename("data/temp_teacher.dat", "data/teacher.dat");
+    if (rename("data/temp_teacher.dat", "data/teacher.dat") == 0)
+        return;
 }
 
 void displayRemoveDataScreen()
