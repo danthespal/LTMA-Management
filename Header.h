@@ -56,10 +56,3 @@ void teacherSubjectCodeVerifier(short teacherSubjectCode[], short inputAtIndex)
         cin >> teacherSubjectCode[inputAtIndex];
     }
 }
-
-void yesNoChoice(char& userInput)
-{
-    cin >> userInput;
-    char expectedInput[] = { 'y', 'n' };
-    validateCharInput(userInput, expectedInput, 2);
-}
