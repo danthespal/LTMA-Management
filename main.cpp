@@ -10,7 +10,7 @@ using namespace std;    // we don't need to add 'std::' standard library methods
 class Student
 {
 private:
-    int rollNumber, studentClass{};
+    int rollNumber, studentClass{}, studentFee{};
     char studentName[29]{}, studentSection{};
     string motherName, fatherName;
 
@@ -21,7 +21,9 @@ public:
     }
     void inputStudentDetails();
     void generateRollNumber();
+    void deductFee(int amountPiad) { studentFee = studentFee - amountPiad; }
     int getRollNumber() { return rollNumber; }
+    int getStudentFee() { return studentFee; }
 };
 
 // generate and return student roll number in format - 12252 which is equivalent to 12th 'B' 52
@@ -66,7 +68,7 @@ void Student::generateRollNumber()
 void Student::inputStudentDetails()
 {
     system("cls");
-    cin.ignore(); // fixes skipping of input; this will be used throughout the code
+    cin.ignore(); // fixes skipping of input; this must be used when 'cin' preceds 'getline()' or cin.get()
     cout << "\nEnter student name (max. 28 characters): ";
     gets_s(studentName);
     cout << "Enter the class (1 to 12): ";
@@ -74,6 +76,8 @@ void Student::inputStudentDetails()
     cout << "Enter the section ('A' to 'D'): ";
     cin.ignore();
     cin.get(studentSection);
+    cout << "Enter annual fee student needs to pay (in RON): ";
+    cin >> studentFee;
     cout << "Enter student father's name: ";
     cin.ignore();
     getline(cin, fatherName);
@@ -92,20 +96,17 @@ void removeStudent()
     ofstream fileToWrite("data/temp_student.dat", ios::binary | ios::app);
     cout << "Enter roll number of student whose data has to be removed: ";
     cin >> userRollNumber;
-
     while (fileToRead.read((char*)&studentRead, sizeof(studentRead)))
     {
         if (userRollNumber == studentRead.getRollNumber())
         {
             flag++;
-            continue;
         }
         else
         {
             fileToWrite.write((char*)&studentRead, sizeof(studentRead));
         }
     }
-
     if (flag == 0)
     {
         cout << "Sorry, no match found.";
@@ -133,87 +134,169 @@ void addStudent()
     studentFile.close();
 }
 
+void receiveStudentFee()
+{
+    system("cls");
+    Student schoolStudent;
+    int inputRollNumber = 0, amountToPay = 0, flag = 0;
+    long filePosition = 0;
+    char inputChoice;
+    fstream studentFile("data/student.dat", ios::in | ios::out | ios::binary);
+    cout << "Enter the roll number of student whose fees you want to receive (in RON): ";
+    cin >> inputRollNumber;
+    while (!studentFile.eof())
+    {
+        filePosition = studentFile.tellg();
+        studentFile.read((char*)&schoolStudent, sizeof(schoolStudent));
+        if (inputRollNumber == schoolStudent.getRollNumber())
+        {
+            flag++;
+            break;
+        }
+    }
+    if (flag == 0)
+    {
+        cout << "Sorry, roll number not found.";
+    }
+    else
+    {
+        if (schoolStudent.getStudentFee() != 0)
+        {
+            do
+            {
+                if (amountToPay > schoolStudent.getStudentFee())
+                {
+                    cout << "\nIt looks like you have entered fees that the remaining. Please, enter fee equal to or less than remaining: ";
+                    cin >> amountToPay;
+                }
+                else
+                {
+                    cout << "Remaining fee the student(" << schoolStudent.getRollNumber() << ") has to pay: RON " << schoolStudent.getStudentFee() << "\nEnter the amount of fee to recive: ";
+                    cin >> amountToPay;
+                }
+            } while (amountToPay > schoolStudent.getStudentFee());
+            cout << "RON" << amountToPay << " will be deducted from remaining fee of RON " << schoolStudent.getStudentFee() << ". Press 'Y' to proceed or 'N' to abort the transaction.\n=> ";
+            char expectedInput[] = { 'y', 'n' };
+            cin >> inputChoice;
+            validateCharInput(inputChoice, expectedInput, 2);
+            switch (inputChoice)
+            {
+            case 'y':
+                schoolStudent.deductFee(amountToPay);
+                cout << "Successful! RON" << amountToPay << " has beed deducted. Now, remaing fees is: " << schoolStudent.getStudentFee();
+                studentFile.seekg(filePosition);
+                studentFile.write((char *)&schoolStudent, sizeof(schoolStudent));
+                break;
+            case 'n':
+                cout << "Transaction aborted!";
+                break;
+            }
+        }
+        else
+        {
+            cout << "Congratulations! All dues are clear for student " << schoolStudent.getRollNumber() << ".";
+        }
+        studentFile.close();
+    }
+}
+
 class Teacher
 {
 private:
     string teacherName, teacherQualification;
-    short teacherExperience{}, teacherClass{};
-    char teacherSubject[11]{}, teacherId[5]{};
+    short teacherExperience{}, teacherClass{}, teacherSubjectCode[3]{};
+    int teacherId;
 
 public:
+    Teacher()
+    {
+        teacherSubjectCode[0] = 0;
+        teacherSubjectCode[1] = 0;
+        teacherSubjectCode[2] = 0;
+        teacherId = 0;
+    }
     void inputTeacherDetails();
     void generateTeacherId();
-    string getTeacherName() { return teacherName; }
+    int getTeacherId() { return teacherId; }
 };
 
 void Teacher::generateTeacherId()
 {
     Teacher schoolTeacherRead;
-    fstream teacherFile("data/teacher.dat", ios::in | ios::out | ios::app | ios::binary);
-    short flag = 0, id = 0;
-
+    ifstream teacherFile("data/teacher.dat", ios::binary);
+    short flag = 0, id = 1, arrayEquality = 0, loopCounter = 0;
     while (teacherFile.read((char*)&schoolTeacherRead, sizeof(schoolTeacherRead)))
     {
         flag++;
-        if (strcmp(teacherSubject, schoolTeacherRead.teacherSubject) == 0)
+        arrayEquality = 0;
+        for (loopCounter = 0; loopCounter < 3; ++loopCounter)
         {
+            if (teacherSubjectCode[loopCounter] == schoolTeacherRead.teacherSubjectCode[loopCounter])
+                ++arrayEquality;
+        }
+        if (arrayEquality == loopCounter)
             id++;
-        }
     }
-
-    if (id == 0 || flag == 0)
-    {
-        newTeacherId(teacherId, teacherSubject);
-    }
-
-    if (id != 0)
-    {
-        for (int i = 0, j = 48; i < 5; i++) // in ASCII char 48 = '0'
-        {
-            if (i < 3)
-            {
-                teacherId[i] = toupper(teacherSubject[i]);
-            }
-            else
-            {
-                if (((id % 10) == 9) && i == 3)
-                {
-                    teacherId[i] = j + ((id / 10) + 1);
-                    i++;
-                    teacherId[i] = j;
-                }
-                else if (i == 3)
-                {
-                    teacherId[i] = j + (id / 10);
-                    i++;
-                    teacherId[i] = j + ((id % 10) + 1);
-                }
-            }
-        }
-    }
+    teacherId = (teacherSubjectCode[0] * 10000) + (teacherSubjectCode[1] * 1000) + (teacherSubjectCode[2] * 100) + id;
 }
 
 void Teacher::inputTeacherDetails()
 {
     system("cls");
+    short flag = 0;
+    char userChoice, keepRunning;
     cout << "\nEnter teacher name: ";
     cin.ignore();
     getline(cin, teacherName);
     cout << "Enter the class to be taught (1 to 12): ";
     cin >> teacherClass;
-    cout << "Enter the subject to be taught: ";
-    cin.ignore();
-    gets_s(teacherSubject);
-    convertCharArrayToLower(teacherSubject, sizeof(teacherSubject));
-    cout << "Enter teacher work experience (in years): ";
+    cout << "\nSubject Code\tSubject\n     1\t\tScience\n     2\t\tMaths\n     3\t\tEnglish\n     4\t\tHindi\n     5\t\tSocial Studies";
+    cout << "\nEnter the subject code(s) from the above list to choose subject(s) the teacher will teach, for e.g. Press '1' to choose 'Science': ";
+    cin >> teacherSubjectCode[flag];
+    teacherSubjectCodeVerifier(teacherSubjectCode, flag);
+    ++flag;
+    do
+    {
+        if (flag == 3)
+        {
+            cout << "Maximum limit of subject per teacher has reached. No more subject can be assigned.\n";
+            break;
+        }
+        else
+        {
+            cout << "Do you want to assign more subjects? Enter 'Y' for yes or 'N' for no: ";
+            cin >> userChoice;
+            if (userChoice == 'y')
+            {
+                cout << "Please enter a subject code: ";
+                cin >> teacherSubjectCode[flag];
+                teacherSubjectCodeVerifier(teacherSubjectCode, flag);
+                do
+                {
+                    keepRunning = 'n';
+                    for (short i = 0; i < flag; ++i)
+                    {
+                        if (teacherSubjectCode[flag] == teacherSubjectCode[i])
+                        {
+                            cout << "You have already assigned this subject. Please enter another subject code: ";
+                            cin >> teacherSubjectCode[flag];
+                            teacherSubjectCodeVerifier(teacherSubjectCode, flag);
+                            keepRunning = 'y';
+                            break;
+                        }
+                    }
+                } while (keepRunning == 'y');
+                ++flag;
+            }
+        }
+    } while (userChoice == 'y' && flag < 4);
+    cout << "\nEnter teacher work experience (in years): ";
     cin >> teacherExperience;
     cout << "Enter teacher educational qualification: ";
     cin.ignore();
     getline(cin, teacherQualification);
-    cout << "\nGenerated teacher ID is ";
     generateTeacherId();
-    displayCharArray(teacherId, sizeof(teacherId));
-    cout << ". Please, note it safely as it'll be asked during data modification";
+    cout << "\nGenerated teacher ID is " << getTeacherId() << " Please, note it safely as it'll be asked during data modification.";
 }
 
 void addTeacher()
@@ -228,43 +311,27 @@ void addTeacher()
 void removeTeacher()
 {
     Teacher teacherRead;
-    string userTeacherName;
+    int inputTeacherId;
     short flag = 0;
     ifstream fileToRead("data/teacher.dat", ios::binary);
     ofstream fileToWrite("data/temp_teacher.dat", ios::binary | ios::app);
-    cout << "Enter name of teacher whose data has to be removed: ";
-    cin.ignore();
-    getline(cin, userTeacherName);
-
-    while (fileToRead.read((char*)&teacherRead, sizeof(teacherRead))) // not working
+    cout << "Enter ID of teacher whose data has to be removed: ";
+    cin >> inputTeacherId;
+    while (fileToRead.read((char*)&teacherRead, sizeof(teacherRead))) // vk note: not working
     {
-        if (userTeacherName == teacherRead.getTeacherName())
-        {
+        if (inputTeacherId == teacherRead.getTeacherId())
             flag++;
-            continue;
-        }
         else
-        {
             fileToWrite.write((char*)&teacherRead, sizeof(teacherRead));
-        }
     }
-
     if (flag == 0)
-    {
-        cout << "Sorry, no match found.";
-    }
+        cout << "Sorry, No Match found.";
     else
-    {
-        cout << "Data of " << userTeacherName << " has been removed from file.";
-    }
+        cout << "Data of teacher " << inputTeacherId << " has been removed from file.";
     fileToRead.close();
     fileToWrite.close();
     remove("data/teacher.dat");
-    if (rename("data/temp_teacher.dat", "data/teacher.dat") != 0)
-        cout << "Error, there is no such file";
-    else
-        return;
-
+    rename("data/temp_teacher.dat", "data/teacher.dat");
 }
 
 void displayRemoveDataScreen()
@@ -318,6 +385,8 @@ void displayAddDataScreen()
 void HomeScreen()
 {
     system("cls");
+    char menuOption;
+    Student schoolStudent;
     cout << "1. WORK WITH DATA RECORDS\t\t\t\t\t\t2. VIEW DATA RECORDS";
     cout << "\nA. Add a new student, teacher or staff\t\t\t\t\tD. View student data records";
     cout << "\nB. Remove an existing student, teacher or staff \t\t\tE. View teacher data records";
@@ -327,9 +396,10 @@ void HomeScreen()
     cout << "\nH. Pay salary to school teacher\t\t\t\t\t\tK. Generate student academic report";
     cout << "\nI. Pay salary to school staff\t\t\t\t\t\t";
     cout << "\n\n=> Enter your choice to proceed. For e.g. Press 'A' to 'Add a new student, teacher or staff': ";
-    char menuOption;
-    cin.get(menuOption);
-    switch (tolower(menuOption))
+    char expectedInput[] = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k' };
+    cin >> menuOption;
+    validateCharInput(menuOption, expectedInput, 11);
+    switch (menuOption)
     {
     case 'a':
         displayAddDataScreen();
@@ -350,7 +420,7 @@ void HomeScreen()
         cout << "\nWork under progress...";
         break;
     case 'g':
-        cout << "\nWork under progress...";
+        receiveStudentFee();
         break;
     case 'h':
         cout << "\nWork under progress...";
@@ -358,7 +428,7 @@ void HomeScreen()
     case 'i':
         cout << "\nWork under progress...";
         break;
-    default:
+    default: // default case will never get executed ;)
         cout << "\nWrong Input Received.";
     }
 }
