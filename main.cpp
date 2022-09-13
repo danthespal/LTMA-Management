@@ -11,8 +11,7 @@ class Student
 {
 private:
     int rollNumber, studentClass{}, studentFee{};
-    char studentName[29]{}, studentSection{};
-    string motherName, fatherName;
+    char studentName[29]{}, motherName[29]{}, fatherName[29]{}, studentSection{};
 
 public:
     Student() // constructor
@@ -21,6 +20,11 @@ public:
     }
     void inputStudentDetails();
     void generateRollNumber();
+    void displayStudentData()
+    {
+        cout << "\nName: " << studentName << "\nRoll Number: " << rollNumber << "\nClass: " << " '" << char(toupper(studentSection)) << "' "
+            << "\nMother's name: " << motherName << "\nFather's name: " << fatherName << "\nRemaining fee: RON" << studentFee;
+    }
     void deductFee(int amountPiad) { studentFee = studentFee - amountPiad; }
     int getRollNumber() { return rollNumber; }
     int getStudentFee() { return studentFee; }
@@ -70,8 +74,8 @@ void Student::generateRollNumber()
 void Student::inputStudentDetails()
 {
     system("cls");
-    cin.ignore(); // fixes skipping of input; this must be used when 'cin' preceds 'getline()' or cin.get()
     cout << "Enter student name (max. 28 characters): ";
+    cin.ignore(); // fixes skipping of input; this must be used when 'cin' preceds 'getline()' or cin.get()
     gets_s(studentName);
     cout << "Enter the class (1 to 12): ";
     cin >> studentClass;
@@ -80,13 +84,14 @@ void Student::inputStudentDetails()
     cin.get(studentSection);
     cout << "Enter annual fee student needs to pay (in RON): ";
     cin >> studentFee;
-    cout << "Enter student father's name: ";
+    cout << "Enter student father's name (max. 28 characters): ";
     cin.ignore();
-    getline(cin, fatherName);
-    cout << "Enter student mother's name: ";
-    getline(cin, motherName);
+    gets_s(fatherName);
+    cout << "Enter student mother's name (max. 28 characters): ";
+    gets_s(motherName);
     generateRollNumber();
     cout << "\nGenerated roll number is " << getRollNumber() << ". Please, note it safely as it'll be asked during data modification.";
+    basicNavigation();
 }
 
 void removeStudent()
@@ -122,6 +127,7 @@ void removeStudent()
     remove("data/student.dat");
     if (rename("data/temp_student.dat", "data/student.dat") == 0)
         return;
+    basicNavigation();
 }
 
 void addStudent()
@@ -178,12 +184,42 @@ void receiveStudentFee()
         cout << "We have successfully received " << amountToPay << ". Now remaining fee for student " << schoolStudent.getRollNumber() << " is: " << schoolStudent.getStudentFee();
     }
     studentFile.close();
+    basicNavigation();
+}
+
+// display student data records storend in student.dat file
+void viewStudentData()
+{
+    system("cls");
+    Student studentRead;
+    ifstream fileToRead("data/student.dat", ios::binary);
+    int inputRollNumber = 0;
+    short flag = 0;
+    cout << "Enter roll number of student whoose data records you want to see: ";
+    cin >> inputRollNumber;
+    while (fileToRead.read((char*)&studentRead, sizeof(studentRead)))
+    {
+        if (inputRollNumber == studentRead.getRollNumber())
+        {
+            ++flag;
+            break;
+        }
+    }
+    if (flag != 0)
+    {
+        studentRead.displayStudentData();
+    }
+    else
+    {
+        cout << "No match found.";
+    }
+    basicNavigation();
 }
 
 class Teacher
 {
 private:
-    string teacherName, teacherQualification;
+    char teacherName[29]{}, teacherSubjects[29]{}, teacherQualification[9]{};
     short teacherExperience{}, teacherClass{}, teacherSubjectCode[3]{};
     int teacherId{}, teacherSalary{};
 
@@ -197,6 +233,12 @@ public:
     void inputTeacherDetails();
     void generateTeacherId();
     void deductTeacherSalary(int salaryPaid) { teacherSalary = teacherSalary - salaryPaid; }
+    void displayTeacherData()
+    {
+        cout << "\nName: " << teacherName << "\nID: " << teacherId << "\nTeacher Qualification: " << teacherQualification << "\nExperience: " << teacherExperience << " years"
+            << "\nClass taught: " << teacherClass << "\nSubjects taught: " << teacherSubjects
+            << "\nSalary to be paid: RON" << teacherSalary;
+    }
     int getTeacherId() { return teacherId; }
     int getTeacherSalary() { return teacherSalary; }
 };
@@ -225,9 +267,9 @@ void Teacher::inputTeacherDetails()
     system("cls");
     short flag = 0;
     char userChoice, keepRunning;
-    cout << "\nEnter teacher name: ";
+    cout << "Enter teacher name (max. 28 characters): ";
     cin.ignore();
-    getline(cin, teacherName);
+    gets_s(teacherName);
     cout << "Enter the class to be taught (1 to 12): ";
     cin >> teacherClass;
     cout << "\nSubject Code\tSubject\n     1\t\tScience\n     2\t\tMaths\n     3\t\tEnglish\n     4\t\tHindi\n     5\t\tSocial Studies";
@@ -270,15 +312,17 @@ void Teacher::inputTeacherDetails()
             }
         }
     } while (userChoice == 'y' && flag < 4);
+    setTeacherSubjects(teacherSubjectCode, teacherSubjects);
     cout << "\nEnter teacher annual salary (in RON): ";
     cin >> teacherSalary;
     cout << "Enter teacher work experience (in years): ";
     cin >> teacherExperience;
     cout << "Enter teacher educational qualification: ";
     cin.ignore();
-    getline(cin, teacherQualification);
+    gets_s(teacherQualification);
     generateTeacherId();
     cout << "\nGenerated teacher ID is " << getTeacherId() << ". Please, note it safely as it'll be asked during data modification.";
+    basicNavigation();
 }
 
 // adds new teacher
@@ -317,6 +361,7 @@ void removeTeacher()
     remove("data/teacher.dat");
     if (rename("data/temp_teacher.dat", "data/teacher.dat") == 0)
         return;
+    basicNavigation();
 }
 
 // pay salary to teacher then deducts from remaining
@@ -364,18 +409,52 @@ void paySalaryToTeacher()
         cout << "You have successfully paid " << salaryPaid << ". Now remaining salary for teacher " << schoolTeacher.getTeacherId() << " is : RON" << schoolTeacher.getTeacherSalary();
     }
     teacherFile.close();
+    basicNavigation();
+}
+
+void viewTeacherData()
+{
+    system("cls");
+    Teacher teacherRead;
+    ifstream fileToRead("data/teacher.dat", ios::binary);
+    int inputId = 0;
+    short flag = 0;
+    cout << "Enter ID of teacher whose data records you want to see: ";
+    cin >> inputId;
+    while (fileToRead.read((char*)&teacherRead, sizeof(teacherRead)))
+    {
+        if (inputId == teacherRead.getTeacherId())
+        {
+            ++flag;
+            break;
+        }
+    }
+    if (flag != 0)
+    {
+        teacherRead.displayTeacherData();
+    }
+    else
+    {
+        cout << "No match found.";
+    }
+    basicNavigation();
 }
 
 class Staff
 {
 private:
-    string staffName;
+    char staffName[29]{}, staffDepartment[29]{};
     int staffSalary{}, staffId{};
     short staffDepartmentCode{};
 
 public:
     void inputStaffDetails();
     void generateStaffId();
+    void displayStaffData()
+    {
+        cout << "\nName: " << staffName << "\nID: " << staffId << "\nDepartment: " << staffDepartment
+            << "\nSalary to be paid: RON " << staffSalary;
+    }
     void deductStaffSalary(int salaryPaid) { staffSalary = staffSalary - salaryPaid; }
     int getStaffSalary() { return staffSalary; }
     int getStaffId() { return staffId; }
@@ -403,9 +482,9 @@ void Staff::generateStaffId()
 void Staff::inputStaffDetails()
 {
     system("cls");
-    cout << "Enter staff name: ";
+    cout << "Enter staff name (max. 28 characters): ";
     cin.ignore();
-    getline(cin, staffName);
+    gets_s(staffName);
     cout << "\nDepartment Code\t\tName of Department\n\t1\t\tCleaning\n\t2\t\tManagement\n\t3\t\tOffice work\n\t4\t\tOthers";
     cout << "\nEnter department code from above list to assign staff to that department: ";
     cin >> staffDepartmentCode;
@@ -414,10 +493,25 @@ void Staff::inputStaffDetails()
         cout << "\nSorry, we received a wrong department code. Please enter valid department code viz. 1, 2, 3 or 4: ";
         cin >> staffDepartmentCode;
     }
+    switch (staffDepartmentCode)
+    {
+    case 1:
+        strcpy_s(staffDepartment, "Cleaning");
+        break;
+    case 2:
+        strcpy_s(staffDepartment, "Management");
+        break;
+    case 3:
+        strcpy_s(staffDepartment, "Office Work");
+    case 4:
+        strcpy_s(staffDepartment, "Others");
+        break;
+    }
     cout << "Enter staff annual salary (in Rs.): ";
     cin >> staffSalary;
     generateStaffId();
     cout << "Generated staff ID is " << getStaffId() << ". Please, note it safely as it'll be asked during data modification.";
+    basicNavigation();
 }
 
 // removal of existing staff
@@ -446,6 +540,7 @@ void removeStaff()
     remove("data/staff.dat");
     if (rename("data/temp_staff.dat", "data/staff.dat") == 0)
         return;
+    basicNavigation();
 }
 
 // add new staff
@@ -499,6 +594,35 @@ void paySalaryToStaff()
         cout << "You have successfully paid " << salaryPaid << ". Now remaining salary for staff " << schoolStaff.getStaffId() << " is: Rs." << schoolStaff.getStaffSalary();
     }
     staffFile.close();
+    basicNavigation();
+}
+
+void viewStaffData()
+{
+    system("cls");
+    Staff staffRead;
+    ifstream fileToRead("data/staff.dat", ios::binary);
+    int inputId = 0;
+    short flag = 0;
+    cout << "Enter ID of staff whose data records you want to see: ";
+    cin >> inputId;
+    while (fileToRead.read((char*)&staffRead, sizeof(staffRead)))
+    {
+        if (inputId == staffRead.getStaffId())
+        {
+            ++flag;
+            break;
+        }
+    }
+    if (flag != 0)
+    {
+        staffRead.displayStaffData();
+    }
+    else
+    {
+        cout << "No match found.";
+    }
+    basicNavigation();
 }
 
 void displayRemoveDataScreen()
@@ -562,10 +686,11 @@ void HomeScreen()
     cout << "\nG. Receive student fee\t\t\t\t\t\t\tJ. Generate student attendance report";
     cout << "\nH. Pay salary to school teacher\t\t\t\t\t\tK. Generate student academic report";
     cout << "\nI. Pay salary to school staff\t\t\t\t\t\t";
-    cout << "\n\n=> Enter your choice to proceed. For e.g. Press 'A' to 'Add a new student, teacher or staff': ";
-    char expectedInput[] = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k' };
+    cout << "\n\n=> You can choose from above displayed menu options. For e.g. 'A' to 'Add a new student, teacher or staff'.";
+    cout << "\nOR\n=> Press 'Z' to quit.\n=> Enter your choice to proceed: ";
+    char expectedInput[] = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'z'};
     cin >> menuOption;
-    validateCharInput(menuOption, expectedInput, 11);
+    validateCharInput(menuOption, expectedInput, 13);
     switch (menuOption)
     {
     case 'a':
@@ -578,13 +703,13 @@ void HomeScreen()
         cout << "\nWork under progress...";
         break;
     case 'd':
-        cout << "\nWork under progress...";
+        viewStudentData();
         break;
     case 'e':
-        cout << "\nWork under progress...";
+        viewTeacherData();
         break;
     case 'f':
-        cout << "\nWork under progress...";
+        viewStaffData();
         break;
     case 'g':
         receiveStudentFee();
@@ -594,6 +719,16 @@ void HomeScreen()
         break;
     case 'i':
         paySalaryToStaff();
+        break;
+    case 'j':
+        break;
+    case 'k':
+        break;
+    case 'l':
+        cout << "Still working...";
+        break;
+    case 'z':
+        exit(0);
         break;
     }
 }
