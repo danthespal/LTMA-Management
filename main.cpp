@@ -6,28 +6,42 @@
 
 using namespace std;    // we don't need to add 'std::' standard library methods
 
+// everything which a member of school have in common is declared here
+class SchoolMember
+{
+protected:
+    char name[29]{};
+    int id;
+
+public:
+    SchoolMember()
+    {
+        id = 0;
+    }
+};
+
 // student class has all the data members and required member functions for students
-class Student
+class Student : public SchoolMember
 {
 private:
-    int rollNumber, studentClass{}, studentFee{};
-    char studentName[29]{}, motherName[29]{}, fatherName[29]{}, studentSection{};
+    int studentClass{}, studentFee{};
+    char motherName[29]{}, fatherName[29]{}, studentSection{};
 
 public:
     Student() // constructor
     {
-        rollNumber = 1;
+        id = 1;
     }
     void inputStudentDetails();
     void generateRollNumber();
     void displayStudentData()
     {
-        cout << "\nName: " << studentName << "\nRoll Number: " << rollNumber << "\nClass: " << " '" << char(toupper(studentSection)) << "' "
+        cout << "\nName" << name << "\nRoll Number: " << id << "\nClass: " << studentClass << " '" << char(toupper(studentSection)) << "' "
             << "\nMother's name: " << motherName << "\nFather's name: " << fatherName << "\nRemaining fee: RON" << studentFee;
     }
     void deductFee(int amountPiad) { studentFee = studentFee - amountPiad; }
-    int getRollNumber() { return rollNumber; }
-    int getStudentFee() { return studentFee; }
+    int getRollNumber() const { return id; }
+    int getStudentFee() const { return studentFee; }
 };
 
 // generate roll number by using class, section and first four characters of name
@@ -47,15 +61,15 @@ void Student::generateRollNumber()
             flag++;
             for (short i = 0; i < 4; ++i)
             {
-                if (tolower(schoolStudentTemp.studentName[i]) > tolower(studentName[i]))
+                if (tolower(schoolStudentTemp.name[i]) > tolower(name[i]))
                 {
-                    schoolStudentTemp.rollNumber++;
-                    rollNumber = schoolStudentTemp.rollNumber - 1;
+                    schoolStudentTemp.id++;
+                    id = schoolStudentTemp.id - 1;
                     break;
                 }
-                else if (tolower(schoolStudentTemp.studentName[i]) < tolower(studentName[i]))
+                else if (tolower(schoolStudentTemp.name[i]) < tolower(name[i]))
                 {
-                    rollNumber = schoolStudentTemp.rollNumber + 1;
+                    id = schoolStudentTemp.id + 1;
                     break;
                 }
                 else
@@ -67,7 +81,7 @@ void Student::generateRollNumber()
     }
     if (flag == 0)
     {
-        rollNumber = (studentClass * 1000) + (tolower(studentSection) - 96) * 100 + rollNumber;
+        id = (studentClass * 1000) + (tolower(studentSection) - 96) * 100 + id;
     }
 }
 
@@ -76,7 +90,7 @@ void Student::inputStudentDetails()
     system("cls");
     cout << "Enter student name (max. 28 characters): ";
     cin.ignore(); // fixes skipping of input; this must be used when 'cin' preceds 'getline()' or cin.get()
-    gets_s(studentName);
+    gets_s(name);
     cout << "Enter the class (1 to 12): ";
     cin >> studentClass;
     cout << "Enter the section ('A' to 'D'): ";
@@ -216,12 +230,12 @@ void viewStudentData()
     basicNavigation();
 }
 
-class Teacher
+class Teacher : public SchoolMember
 {
 private:
-    char teacherName[29]{}, teacherSubjects[29]{}, teacherQualification[9]{};
+    char teacherSubjects[29]{}, teacherQualification[9]{};
     short teacherExperience{}, teacherClass{}, teacherSubjectCode[3]{};
-    int teacherId{}, teacherSalary{};
+    int teacherSalary{};
 
 public:
     Teacher()
@@ -233,21 +247,24 @@ public:
     void inputTeacherDetails();
     void generateTeacherId();
     void deductTeacherSalary(int salaryPaid) { teacherSalary = teacherSalary - salaryPaid; }
-    void displayTeacherData()
+    void displayTeacherData() const
     {
-        cout << "\nName: " << teacherName << "\nID: " << teacherId << "\nTeacher Qualification: " << teacherQualification << "\nExperience: " << teacherExperience << " years"
+        cout << "\nName: " << name << "\nID: " << id << "\nTeacher Qualification: " << teacherQualification << "\nExperience: " << teacherExperience << " years"
             << "\nClass taught: " << teacherClass << "\nSubjects taught: " << teacherSubjects
             << "\nSalary to be paid: RON" << teacherSalary;
     }
-    int getTeacherId() { return teacherId; }
-    int getTeacherSalary() { return teacherSalary; }
+    int getTeacherId() const { return id; }
+    int getTeacherSalary() const { return teacherSalary; }
 };
 
+// generates id in format: first three digist are subject code of subject the teacher teaches and the last two digits are
+// incremented when same subject set of teacher is found. for e.g. 12305 indicates that teacher teach subject codes 1, 2 & 3 and
+// is the 5th teacher to teache the same three subjects in school
 void Teacher::generateTeacherId()
 {
     Teacher schoolTeacherRead;
     ifstream teacherFile("data/teacher.dat", ios::binary);
-    short id = 1, arrayEquality = 0, loopCounter = 0;
+    short tempId = 1, arrayEquality = 0, loopCounter = 0;
     while (teacherFile.read((char*)&schoolTeacherRead, sizeof(schoolTeacherRead)))
     {
         arrayEquality = 0;
@@ -257,9 +274,9 @@ void Teacher::generateTeacherId()
                 ++arrayEquality;
         }
         if (arrayEquality == loopCounter)
-            id++;
+            tempId++;
     }
-    teacherId = (teacherSubjectCode[0] * 10000) + (teacherSubjectCode[1] * 1000) + (teacherSubjectCode[2] * 100) + id;
+    id = (teacherSubjectCode[0] * 10000) + (teacherSubjectCode[1] * 1000) + (teacherSubjectCode[2] * 100) + tempId;
 }
 
 void Teacher::inputTeacherDetails()
@@ -269,7 +286,7 @@ void Teacher::inputTeacherDetails()
     char userChoice, keepRunning;
     cout << "Enter teacher name (max. 28 characters): ";
     cin.ignore();
-    gets_s(teacherName);
+    gets_s(name);
     cout << "Enter the class to be taught (1 to 12): ";
     cin >> teacherClass;
     cout << "\nSubject Code\tSubject\n     1\t\tScience\n     2\t\tMaths\n     3\t\tEnglish\n     4\t\tHindi\n     5\t\tSocial Studies";
@@ -440,24 +457,24 @@ void viewTeacherData()
     basicNavigation();
 }
 
-class Staff
+class Staff : public SchoolMember
 {
 private:
-    char staffName[29]{}, staffDepartment[29]{};
-    int staffSalary{}, staffId{};
+    char staffDepartment[29]{};
+    int staffSalary{};
     short staffDepartmentCode{};
 
 public:
     void inputStaffDetails();
     void generateStaffId();
-    void displayStaffData()
+    void displayStaffData() const
     {
-        cout << "\nName: " << staffName << "\nID: " << staffId << "\nDepartment: " << staffDepartment
+        cout << "\nName: " << name << "\nID: " << id << "\nDepartment: " << staffDepartment
             << "\nSalary to be paid: RON " << staffSalary;
     }
     void deductStaffSalary(int salaryPaid) { staffSalary = staffSalary - salaryPaid; }
-    int getStaffSalary() { return staffSalary; }
-    int getStaffId() { return staffId; }
+    int getStaffSalary() const { return staffSalary; }
+    int getStaffId() const { return id; }
 };
 
 // generate staff id in format as explained:
@@ -466,16 +483,16 @@ public:
 void Staff::generateStaffId()
 {
     Staff staffRead;
-    short id = 1;
+    short tempId = 1;
     ifstream fileToRead("data/staff.dat", ios::binary);
     while (fileToRead.read((char*)&staffRead, sizeof(staffRead)))
     {
         if (staffDepartmentCode == staffRead.staffDepartmentCode)
         {
-            id++;
+            tempId++;
         }
     }
-    staffId = (staffDepartmentCode * 1000) + id;
+    id = (staffDepartmentCode * 1000) + tempId;
 }
 
 // all staff inputs
@@ -484,7 +501,7 @@ void Staff::inputStaffDetails()
     system("cls");
     cout << "Enter staff name (max. 28 characters): ";
     cin.ignore();
-    gets_s(staffName);
+    gets_s(name);
     cout << "\nDepartment Code\t\tName of Department\n\t1\t\tCleaning\n\t2\t\tManagement\n\t3\t\tOffice work\n\t4\t\tOthers";
     cout << "\nEnter department code from above list to assign staff to that department: ";
     cin >> staffDepartmentCode;
@@ -625,6 +642,11 @@ void viewStaffData()
     basicNavigation();
 }
 
+class Academic : public Student
+{
+    // under progress...
+};
+
 void displayRemoveDataScreen()
 {
     system("cls");
@@ -683,9 +705,9 @@ void HomeScreen()
     cout << "\nB. Remove an existing student, teacher or staff \t\t\tE. View teacher data records";
     cout << "\nC. Update data of an existing student, teacher or staff\t\t\tF. View staff data records";
     cout << "\n\n3. ACCOUNTING AND FINANCE\t\t\t\t\t\t4. STUDENT ACADEMICS";
-    cout << "\nG. Receive student fee\t\t\t\t\t\t\tJ. Generate student attendance report";
+    cout << "\nG. Receive student fee\t\t\t\t\t\t\tJ. View student academics report";
     cout << "\nH. Pay salary to school teacher\t\t\t\t\t\tK. Generate student academic report";
-    cout << "\nI. Pay salary to school staff\t\t\t\t\t\t";
+    cout << "\nI. Pay salary to school staff\t\t\t\t\t\tL. Generate student attendance report";
     cout << "\n\n=> You can choose from above displayed menu options. For e.g. 'A' to 'Add a new student, teacher or staff'.";
     cout << "\nOR\n=> Press 'Z' to quit.\n=> Enter your choice to proceed: ";
     char expectedInput[] = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'z'};
