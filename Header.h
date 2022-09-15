@@ -17,7 +17,7 @@ void sanitizeCharAray(char memberName[], short arraySize)
 }
 
 // display character array in uppercase
-void displayNameInUpper(const char memberName[], short arraySize)
+void displayNameInUpper(const char memberName[], size_t arraySize)
 {
     cout << "\nName: ";
     for (short i = 0; i < arraySize; ++i)

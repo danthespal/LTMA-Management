@@ -8,11 +8,14 @@
 // we don't need to add 'std::' standard library methods
 using namespace std;
 
+// declaring name length constant
+const short NAME_LENGTH = 29;
+
 // everything which a member of school have in common is declared here
 class SchoolMember
 {
 protected:
-    char name[29]{};
+    char name[NAME_LENGTH]{};
     int id;
 
 public:
@@ -33,6 +36,7 @@ void removeMember(const string filePath, const string tempFilePath, const T scho
     short flag = 0;
     ifstream fileToRead(filePath, ios::binary);
     ofstream fileToWrite(tempFilePath, ios::binary | ios::app);
+    fileToRead.seekg(0);
     cout << "Enter ID of person whose data has to be removed: ";
     cin >> inputId;
     while (fileToRead.read((char*)&schoolMember, sizeof(schoolMember)))
@@ -59,6 +63,7 @@ void removeMember(const string filePath, const string tempFilePath, const T scho
     remove(filePath.c_str());
     if (rename(tempFilePath.c_str(), filePath.c_str()))
         return;
+    basicNavigation();
 }
 
 // using function template to add contents of student, teacher or staff
@@ -69,6 +74,7 @@ void addMember(const string filePath, T schoolMember)
     schoolMember.inputDetails();
     file.write((char*)&schoolMember, sizeof(schoolMember));
     file.close();
+    basicNavigation();
 }
 
 // allow users to view student, teacher or staff data records
@@ -97,6 +103,7 @@ void viewData(const string filePath, const T schoolMember)
     {
         cout << "No match found.";
     }
+    basicNavigation();
 }
 
 // allow users to update student, teacher or staff data records
@@ -112,6 +119,7 @@ void updateMemberData(const string filePath, T schoolMember)
     fstream file(filePath, ios::in | ios::out | ios::binary);
     if (file)
     {
+        file.seekg(0);
         cout << "Enter ID or roll number of person whose data has to be updated: ";
         cin >> inputId;
         while (!file.eof())
@@ -141,6 +149,7 @@ void updateMemberData(const string filePath, T schoolMember)
         cout << "\nOops! There's something wrong with file "
             << filePath << ". Please, make sure it exists.\n";
     }
+    basicNavigation();
 }
 
 // pay salary to teacher or staff
@@ -154,6 +163,7 @@ void paySalaryToMember(const string filePath, T schoolMember)
     streamoff filePosition = 0;
     short flag = 0;
     fstream file(filePath, ios::in | ios::out | ios::binary);
+    file.seekg(0);
     cout << "Enter ID to pay salary: ";
     cin >> inputId;
     while (!file.eof())
@@ -189,6 +199,7 @@ void paySalaryToMember(const string filePath, T schoolMember)
         cout << "You have successfully piad " << salaryPaid << ". Now remaining salary for " << schoolMember.getId() << " is : RON" << schoolMember.getSalary();
     }
     file.close();
+    basicNavigation();
 }
 
 // student class has all the data members and required member functions for students
@@ -203,14 +214,12 @@ protected:
 public:
     using SchoolMember::name;
     short studentClass{};
-    char motherName[29]{}, fatherName[29]{}, studentSection{};
+    char motherName[NAME_LENGTH]{}, fatherName[NAME_LENGTH]{}, studentSection{};
 
     Student()
     {
         id = 1;
         studentFee = 0;
-        strcpy_s(name, " ");
-        strcpy_s(motherName, " ");
     }
 
     int getId() const { SchoolMember::getId(); return id; }
@@ -219,14 +228,15 @@ public:
     void generateRollNumber();
     void displayData() const
     {
-        cout << "\nName" << name << "\nRoll Number: " << id << "\nClass: " << studentClass << " '" << char(toupper(studentSection)) << "' "
-            << "\nMother's name: " << motherName << "\nFather's name: " << fatherName << "\nRemaining fee: RON" << studentFee;
+        displayNameInUpper(name, strlen(name));
+        cout << "\nRoll Number: " << id << "\nClass: " << studentClass << " '" << char(toupper(studentSection)) << "' "
+            << "\nMother's name: " << motherName << "\nFather's name: " << fatherName << "\nRemaining fee: RON." << studentFee;
     }
     void deductFee(int amountPiad) { studentFee = studentFee - amountPiad; }
     int getStudentFee() const { return studentFee; }
 };
 
-// generate roll number by using class, section and first four characters of name
+// generate roll number by using class, section and first five characters of name
 // student roll number format is explained below:
 // first two digits is class, third digit is section and last two are alphabetical position of student in his/her class
 // for e.g. 12252 is equivalent to class = 12th, section = 'B', alphabetical position = 52
@@ -237,32 +247,42 @@ void Student::generateRollNumber()
     short flag = 0;
     while (studentFile.read((char*)&schoolStudentTemp, sizeof(schoolStudentTemp)))
     {
-        if (studentClass == schoolStudentTemp.studentClass && tolower(studentSection) == tolower(schoolStudentTemp.studentSection))
+        if (studentClass == schoolStudentTemp.studentClass && studentSection == schoolStudentTemp.studentSection)
         {
             ++flag;
-            for (short i = 0; i < 4; ++i)
+            sanitizeCharAray(name, NAME_LENGTH);
+            sanitizeCharAray(name, NAME_LENGTH);
+            if (strcmp(name, schoolStudentTemp.name) == 0)
             {
-                if (tolower(schoolStudentTemp.name[i]) > tolower(name[i]))
+                id = schoolStudentTemp.id + 1;
+                break;
+            }
+            else
+            {
+                for (short i = 0; i < 5; ++i)
                 {
-                    schoolStudentTemp.id++;
-                    id = schoolStudentTemp.id - 1;
-                    break;
-                }
-                else if (tolower(schoolStudentTemp.name[i]) < tolower(name[i]))
-                {
-                    id = schoolStudentTemp.id + 1;
-                    break;
-                }
-                else
-                {
-                    continue;
+                    if (schoolStudentTemp.name[i] > name[i])
+                    {
+                        schoolStudentTemp.id++;
+                        id = schoolStudentTemp.id - 1;
+                        break;
+                    }
+                    else if (schoolStudentTemp.name[i] < name[i])
+                    {
+                        id = schoolStudentTemp.id + 1;
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
                 }
             }
         }
     }
     if (flag == 0)
     {
-        id = (studentClass * 1000) + (tolower(studentSection) - 96) * 100 + id;
+        id = (studentClass * 1000) + (studentSection - 96) * 100 + id;
     }
 }
 
@@ -276,6 +296,7 @@ void Student::inputDetails()
     cin >> studentClass;
     cout << "Enter the section ('A' to 'D'): ";
     cin >> studentSection;
+    studentSection = tolower(studentSection);
     cout << "Enter annual fee student needs to pay (in RON): ";
     cin >> studentFee;
     cout << "Enter student father's name (max. 28 characters): ";
@@ -415,7 +436,8 @@ public:
     void deductSalary(int salaryPaid) { teacherSalary = teacherSalary - salaryPaid; }
     void displayData() const
     {
-        cout << "\nName: " << name << "\nID: " << id << "\nTeacher Qualification: " << teacherQualification << "\nExperience: " << teacherExperience << " years"
+        displayNameInUpper(name, strlen(name));
+        cout << "\nID: " << id << "\nTeacher Qualification: " << teacherQualification << "\nExperience: " << teacherExperience << " years"
             << "\nClass taught: " << teacherClass << "\nSubject taught: " << teacherSubject
             << "\nSalary to be paid: RON" << teacherSalary;
     }
@@ -561,7 +583,7 @@ void Teacher::updateData()
 class Staff : public SchoolMember
 {
 private:
-    char staffDepartment[29]{};
+    char staffDepartment[NAME_LENGTH]{};
     int staffSalary{};
     short staffDepartmentCode{};
 
@@ -571,8 +593,9 @@ public:
     void generateStaffId();
     void displayData() const
     {
-        cout << "\nName: " << name << "\nID: " << id << "\nDepartment: " << staffDepartment
-            << "\nSalary to be paid: RON " << staffSalary;
+        displayNameInUpper(name, strlen(name));
+        cout << "\nID: " << id << "\nDepartment: " << staffDepartment
+            << "\nSalary to be paid: RON" << staffSalary;
     }
     void deductSalary(int salaryPaid) { staffSalary = staffSalary - salaryPaid; }
     int getSalary() const { return staffSalary; }
@@ -715,27 +738,27 @@ public:
     void generateAttendanceReport(Student&, short&);
     void displayAcademicReport() const
     {
-        cout << "\n\t\t\t\t\t----------------";
-        cout << "\n\t\t\t\t\tACADEMIC REPORT";
-        cout << "\n\t\t\t\t\t----------------";
-        cout << "\n\nName: " << name;
+        cout << "\n\t\t\t\t\t-------------------";
+        cout << "\n\t\t\t\t\t  ACADEMIC REPORT";
+        cout << "\n\t\t\t\t\t-------------------\n";
+        displayNameInUpper(name, strlen(name));
         cout << "\nClass: " << studentClass << " '" << char(toupper(studentSection)) << "' "
             << "\nMother's name: " << motherName << "\nFather's name: " << fatherName;
         // Subject codes: 1 = Science, 2 = Maths, 3 = English, 4 = Hindi, 5 = Social Studies
-        cout << "\n\nSubject Code\t\tSubject\t\tMarks";
-        cout << "\n\t\t1\t\t\tScience\t\t" << marks[0];
-        cout << "\n\t\t2\t\t\tMaths\t\t" << marks[1];
-        cout << "\n\t\t3\t\t\tEnglish\t\t" << marks[2];
-        cout << "\n\t\t4\t\t\tHindi\t\t" << marks[3];
-        cout << "\n\t\t5\t\t\tSocial Studies\t\t" << marks[4];
-        cout << fixed << setprecision(1) << "\n\n \t\t\t\tAverage Percentage = " << averageMarks << "%";
+        cout << "\n\nSubject Code\t\tSubject\t\t\tMarks (out of 100)";
+        cout << "\n     1\t\t\tScience\t\t\t\t" << marks[0];
+        cout << "\n     2\t\t\tMaths\t\t\t\t" << marks[1];
+        cout << "\n     3\t\t\tEnglish\t\t\t\t" << marks[2];
+        cout << "\n     4\t\t\tHindi\t\t\t\t" << marks[3];
+        cout << "\n     5\t\t\tSocial Studies\t\t\t" << marks[4];
+        cout << fixed << setprecision(1) << "\n\n\t\t\tAverage Percentage = " << averageMarks << "%";
     }
     void displayAttendanceReport() const
     {
-        cout << "\n\t\t\t\t\t--------------------";
-        cout << "\n\t\t\t\t\t ATTENDANCE REPORT";
-        cout << "\n\t\t\t\t\t--------------------";
-        cout << "\n\nName: " << name;
+        cout << "\n\t\t\t\t\t---------------------";
+        cout << "\n\t\t\t\t\t  ATTENDANCE REPORT";
+        cout << "\n\t\t\t\t\t---------------------\n";
+        displayNameInUpper(name, strlen(name));
         cout << "\nClass: " << studentClass << " '" << char(toupper(studentSection)) << "' "
             << "\nMother's name: " << motherName << "\nFather's name: " << fatherName;
         cout << "\n\nTotal Number of Working Days = " << totalWorkingDays;
@@ -853,6 +876,7 @@ void academicReport()
         academicFile.write((char*)&studentAcademics, sizeof(studentAcademics));
     }
     academicFile.close();
+    basicNavigation();
 }
 
 // calls studentAcademics.generateAttendanceReport(Student)
@@ -869,6 +893,7 @@ void attendanceReport()
         attendanceFile.write((char*)&studentAcademics, sizeof(studentAcademics));
     }
     attendanceFile.close();
+    basicNavigation();
 }
 
 void viewAcademicReports()
@@ -923,9 +948,10 @@ void viewAcademicReports()
         else
         {
             cout << "Sorry, no attendance report found for student " << inputRollNumber << ".";
-            break;
         }
+        break;
     }
+    basicNavigation();
 }
 
 // displays screen for addition of new student, teacher or staff
@@ -1012,11 +1038,11 @@ void displayUpdateDataScreen()
 // note: Administrator is anyone using our school management system app
 void HomeScreen()
 {
-    system("cls");
-    char menuOption;
     Student schoolStudent;
     Teacher schoolTeacher;
     Staff schoolStaff;
+    system("cls");
+    char menuOption;
     cout << "1. WORK WITH DATA RECORDS\t\t\t\t\t\t2. VIEW DATA RECORDS";
     cout << "\nA. Add a new student, teacher or staff\t\t\t\t\tD. View student data records";
     cout << "\nB. Remove an existing student, teacher or staff \t\t\tE. View teacher data records";
