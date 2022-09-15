@@ -5,7 +5,8 @@
 #include <stdio.h>      // for remove() and rename()
 #include "Header.h"     // contains utils required for proper I/O
 
-using namespace std;    // we don't need to add 'std::' standard library methods
+// we don't need to add 'std::' standard library methods
+using namespace std;
 
 // everything which a member of school have in common is declared here
 class SchoolMember
@@ -27,7 +28,8 @@ public:
 template <typename T>
 void removeMember(const string filePath, const string tempFilePath, const T& schoolMember)
 {
-    int inputId;
+    system("cls");
+    int inputId = 0;
     short flag = 0;
     ifstream fileToRead(filePath, ios::binary);
     ofstream fileToWrite(tempFilePath, ios::binary | ios::app);
@@ -55,7 +57,8 @@ void removeMember(const string filePath, const string tempFilePath, const T& sch
     fileToRead.close();
     fileToWrite.close();
     remove(filePath.c_str());
-    rename(tempFilePath.c_str(), filePath.c_str());
+    if (rename(tempFilePath.c_str(), filePath.c_str()))
+        return;
 }
 
 // using function template to add contents of student, teacher or staff
@@ -66,6 +69,78 @@ void addMember(const string filePath, T& schoolMember)
     schoolMember.inputDetails();
     file.write((char*)&schoolMember, sizeof(schoolMember));
     file.close();
+}
+
+// allow users to view student, teacher or staff data records
+template <typename T>
+void viewData(const string filePath, const T& schoolMember)
+{
+    system("cls");
+    ifstream fileToRead(filePath, ios::binary);
+    int inputId = 0;
+    short flag = 0;
+    cout << "Enter ID of person whose data records you want to see: ";
+    cin >> inputId;
+    while (fileToRead.read((char*)&schoolMember, sizeof(schoolMember)))
+    {
+        if (inputId == schoolMember.getId())
+        {
+            ++flag;
+            break;
+        }
+    }
+    if (flag > 0)
+    {
+        schoolMember.displayData();
+    }
+    else
+    {
+        cout << "No match found.";
+    }
+}
+
+// allow users to update student, teacher or staff data records
+// ask for id or roll number. proceed to next step only if roll number exist in passed 'filePath'
+// if roll number exist, call 'updateData()' and write to file
+template <typename T>
+void updateMemberData(const string filePath, T& schoolMember)
+{
+    system("cls");
+    int inputId = 0;
+    short flag = 0;
+    streamoff filePosition = 0;
+    fstream file(filePath, ios::in | ios::out | ios::binary);
+    if (file)
+    {
+        cout << "Enter ID or roll number of person whose data has to be updated: ";
+        cin >> inputId;
+        while (!file.eof())
+        {
+            filePosition = file.tellg();
+            file.read((char*)&schoolMember, sizeof(schoolMember));
+            if (inputId == schoolMember.getId())
+            {
+                ++flag;
+                break;
+            }
+        }
+        if (flag > 0)
+        {
+            schoolMember.updateData();
+            file.seekg(filePosition);
+            file.write((char*)&schoolMember, sizeof(schoolMember));
+            cout << "\nFile has beed successfully update.";
+        }
+        else
+        {
+            cout << "Sorry, no match found.";
+        }
+    }
+    else
+    {
+        cout << "\nThere's something wrong with file "
+            << filePath << ". Please, make sure it exists.\n";
+    }
 }
 
 // student class has all the data members and required member functions for students
@@ -85,8 +160,9 @@ public:
     }
 
     void inputDetails();
+    void updateData();
     void generateRollNumber();
-    void displayStudentData()
+    void displayData() const
     {
         cout << "\nName" << name << "\nRoll Number: " << id << "\nClass: " << studentClass << " '" << char(toupper(studentSection)) << "' "
             << "\nMother's name: " << motherName << "\nFather's name: " << fatherName << "\nRemaining fee: RON" << studentFee;
@@ -145,8 +221,7 @@ void Student::inputDetails()
     cout << "Enter the class (1 to 12): ";
     cin >> studentClass;
     cout << "Enter the section ('A' to 'D'): ";
-    cin.ignore();
-    cin.get(studentSection);
+    cin >> studentSection;
     cout << "Enter annual fee student needs to pay (in RON): ";
     cin >> studentFee;
     cout << "Enter student father's name (max. 28 characters): ";
@@ -208,55 +283,86 @@ void receiveStudentFee()
 }
 
 // display student data records storend in student.dat file
-void viewStudentData()
+void Student::updateData()
 {
-    system("cls");
-    Student studentRead;
-    ifstream fileToRead("data/student.dat", ios::binary);
-    int inputRollNumber = 0;
-    short flag = 0;
-    cout << "Enter roll number of student whoose data records you want to see: ";
-    cin >> inputRollNumber;
-    while (fileToRead.read((char*)&studentRead, sizeof(studentRead)))
+    char userChoice = ' ';
+    cout << "Press '+' to update student name or press 'Enter' key to retain old data: ";
+    cin.ignore();
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10) // 10 is ASCII value for enter key
     {
-        if (inputRollNumber == studentRead.getId())
-        {
-            ++flag;
-            break;
-        }
+        cout << "Enter new name (max. 28 characters)";
+        cin.ignore();
+        gets_s(name);
     }
-    if (flag != 0)
+    cout << "\nPress '+' to update student class or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
     {
-        studentRead.displayStudentData();
+        cout << "Enter new class (1 - 12): ";
+        cin.ignore();
+        cin >> studentClass;
+        cin.ignore();
     }
-    else
+    cout << "\nPress '+' to update student section or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
     {
-        cout << "No match found.";
+        cout << "Enter new section ('A' to 'D'): ";
+        cin.ignore();
+        cin >> studentSection;
+        cin.ignore();
     }
-    basicNavigation();
+    cout << "\nPress '+' to update student annual fee or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
+    {
+        cout << "Enter new annual feww (in RON): ";
+        cin.ignore();
+        cin >> studentFee;
+        cin.ignore();
+    }
+    cout << "\nPress '+' to update student father's name or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
+    {
+        cout << "Enter father's name (max. 28 characters): ";
+        cin.ignore();
+        gets_s(fatherName);
+    }
+    cout << "\nPress '+' to update student mother's name or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
+    {
+        cout << "Enter mother's name (max. 28 characters): ";
+        cin.ignore();
+        gets_s(motherName);
+    }
+    generateRollNumber();
+    cout << "\nGenerated roll number is " << getId() << ". Please, note it safely as it'll be asked during data modification.";
 }
 
 class Teacher : public SchoolMember
 {
 private:
-    char teacherSubjects[29]{}, teacherQualification[9]{};
-    short teacherExperience{}, teacherClass{}, teacherSubjectCode[3]{};
+    char teacherSubject[17]{}, teacherQualification[9]{};
+    short teacherExperience{}, teacherClass{}, teacherSubjectCode{};
     int teacherSalary{};
 
 public:
     Teacher()
     {
-        teacherSubjectCode[0] = 0;
-        teacherSubjectCode[1] = 0;
-        teacherSubjectCode[2] = 0;
+        teacherSubjectCode = 0;
+        id = 1;
     }
     void inputDetails();
     void generateTeacherId();
+    void updateData();
     void deductTeacherSalary(int salaryPaid) { teacherSalary = teacherSalary - salaryPaid; }
-    void displayTeacherData() const
+    void displayData() const
     {
         cout << "\nName: " << name << "\nID: " << id << "\nTeacher Qualification: " << teacherQualification << "\nExperience: " << teacherExperience << " years"
-            << "\nClass taught: " << teacherClass << "\nSubjects taught: " << teacherSubjects
+            << "\nClass taught: " << teacherClass << "\nSubject taught: " << teacherSubject
             << "\nSalary to be paid: RON" << teacherSalary;
     }
     int getTeacherSalary() const { return teacherSalary; }
@@ -269,72 +375,55 @@ void Teacher::generateTeacherId()
 {
     Teacher schoolTeacherRead;
     ifstream teacherFile("data/teacher.dat", ios::binary);
-    short tempId = 1, arrayEquality = 0, loopCounter = 0;
+    short flag = 0;
     while (teacherFile.read((char*)&schoolTeacherRead, sizeof(schoolTeacherRead)))
     {
-        arrayEquality = 0;
-        for (loopCounter = 0; loopCounter < 3; ++loopCounter)
+        if (teacherSubjectCode == schoolTeacherRead.teacherSubjectCode && teacherClass == schoolTeacherRead.teacherClass)
         {
-            if (teacherSubjectCode[loopCounter] == schoolTeacherRead.teacherSubjectCode[loopCounter])
-                ++arrayEquality;
+            ++flag;
+            id = schoolTeacherRead.id + 1;
         }
-        if (arrayEquality == loopCounter)
-            tempId++;
     }
-    id = (teacherSubjectCode[0] * 10000) + (teacherSubjectCode[1] * 1000) + (teacherSubjectCode[2] * 100) + tempId;
+    if (flag == 0) // de verificat
+    {
+        id = (teacherClass * 1000) + (teacherSubjectCode * 100) + id;
+    }
 }
 
 void Teacher::inputDetails()
 {
     system("cls");
-    short flag = 0;
-    char userChoice, keepRunning;
     cout << "Enter teacher name (max. 28 characters): ";
     cin.ignore();
     gets_s(name);
     cout << "Enter the class to be taught (1 to 12): ";
     cin >> teacherClass;
     cout << "\nSubject Code\tSubject\n     1\t\tScience\n     2\t\tMaths\n     3\t\tEnglish\n     4\t\tHindi\n     5\t\tSocial Studies";
-    cout << "\nEnter the subject code(s) from the above list to choose subject(s) the teacher will teach, for e.g. Press '1' to choose 'Science': ";
-    cin >> teacherSubjectCode[flag];
-    teacherSubjectCodeVerifier(teacherSubjectCode, flag);
-    ++flag;
-    do
+    cout << "\nEnter the subject code from the above list to choose subject the teacher will teach, for e.g. Press '1' to choose 'Science': ";
+    cin >> teacherSubjectCode;
+    while (teacherSubjectCode > 5 || teacherSubjectCode < 1)
     {
-        if (flag == 3)
-        {
-            cout << "Maximum limit of subject per teacher has reached. No more subject can be assigned.\n";
-            break;
-        }
-        else
-        {
-            cout << "Do you want to assign more subjects? Enter 'Y' for yes or 'N' for no: ";
-            cin >> userChoice;
-            if (userChoice == 'y')
-            {
-                cout << "Please enter a subject code: ";
-                cin >> teacherSubjectCode[flag];
-                teacherSubjectCodeVerifier(teacherSubjectCode, flag);
-                do
-                {
-                    keepRunning = 'n';
-                    for (short i = 0; i < flag; ++i)
-                    {
-                        if (teacherSubjectCode[flag] == teacherSubjectCode[i])
-                        {
-                            cout << "You have already assigned this subject. Please enter another subject code: ";
-                            cin >> teacherSubjectCode[flag];
-                            teacherSubjectCodeVerifier(teacherSubjectCode, flag);
-                            keepRunning = 'y';
-                            break;
-                        }
-                    }
-                } while (keepRunning == 'y');
-                ++flag;
-            }
-        }
-    } while (userChoice == 'y' && flag < 4);
-    setTeacherSubjects(teacherSubjectCode, teacherSubjects);
+        cout << "\nSorry, we received a wrong subject code. Please enter valid subject code viz. 1, 2, 3, 4 or 5: ";
+        cin >> teacherSubjectCode;
+    }
+    switch (teacherSubjectCode)
+    {
+    case 1:
+        strcpy_s(teacherSubject, "Science");
+        break;
+    case 2:
+        strcpy_s(teacherSubject, "Maths");
+        break;
+    case 3:
+        strcpy_s(teacherSubject, "English");
+        break;
+    case 4:
+        strcpy_s(teacherSubject, "Hindi");
+        break;
+    case 5:
+        strcpy_s(teacherSubject, "Social Studies");
+        break;
+    }
     cout << "\nEnter teacher annual salary (in RON): ";
     cin >> teacherSalary;
     cout << "Enter teacher work experience (in years): ";
@@ -395,31 +484,71 @@ void paySalaryToTeacher()
     basicNavigation();
 }
 
-void viewTeacherData()
+void Teacher::updateData()
 {
-    system("cls");
-    Teacher teacherRead;
-    ifstream fileToRead("data/teacher.dat", ios::binary);
-    int inputId = 0;
-    short flag = 0;
-    cout << "Enter ID of teacher whose data records you want to see: ";
-    cin >> inputId;
-    while (fileToRead.read((char*)&teacherRead, sizeof(teacherRead)))
+    char userChoice = ' ';
+    cout << "Press '+' to update teacher name or press 'Enter' key to retain old data: ";
+    cin.ignore();
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10) // 10 is ASCII value of linefeed (enter key)
     {
-        if (inputId == teacherRead.getId())
+        char userChoice = ' ';
+        cout << "Press '+' to update teacher name or press 'Enter' key to retain old data: ";
+        cin.ignore();
+        cin.get(userChoice);
+        if (userChoice == '+' && userChoice != 10) // 10 is ASCII value of linefeed (enter key)
         {
-            ++flag;
+            cout << "\nSorry, we received a wrong subject code. Please enter valid subject code viz. 1, 2, 3, 4 or 5: ";
+            cin >> teacherSubjectCode;
+        }
+        switch (teacherSubjectCode)
+        {
+        case 1:
+            strcpy_s(teacherSubject, "Science");
+            break;
+        case 2:
+            strcpy_s(teacherSubject, "Maths");
+            break;
+        case 3:
+            strcpy_s(teacherSubject, "English");
+            break;
+        case 4:
+            strcpy_s(teacherSubject, "Hindi");
+            break;
+        case 5:
+            strcpy_s(teacherSubject, "Social Studies");
             break;
         }
     }
-    if (flag != 0)
+    cout << "\nPress '+' to update teacher annual salary or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
     {
-        teacherRead.displayTeacherData();
+        cout << "Enter new annual salary (in Rs.): ";
+        cin.ignore();
+        cin >> teacherSalary;
+        cin.ignore();
     }
-    else
+    cout << "\nPress '+' to update teacher work experience or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
     {
-        cout << "No match found.";
+        cout << "Enter new work experience (in years): ";
+        cin.ignore();
+        cin >> teacherExperience;
+        cin.ignore();
     }
+    cout << "\nPress '+' to update teacher educational qualification or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
+    {
+        cout << "Enter new educational qualification (max. 8 characters): ";
+        cin.ignore();
+        gets_s(teacherQualification);
+        cin.ignore();
+    }
+    generateTeacherId();
+    cout << "\nGenerated ID is " << getId() << ". Please, note it safely as it'll be asked during data modification.";
     basicNavigation();
 }
 
@@ -432,8 +561,9 @@ private:
 
 public:
     void inputDetails();
+    void updateData();
     void generateStaffId();
-    void displayStaffData() const
+    void displayData() const
     {
         cout << "\nName: " << name << "\nID: " << id << "\nDepartment: " << staffDepartment
             << "\nSalary to be paid: RON " << staffSalary;
@@ -540,32 +670,60 @@ void paySalaryToStaff()
     basicNavigation();
 }
 
-void viewStaffData()
+void Staff::updateData()
 {
-    system("cls");
-    Staff staffRead;
-    ifstream fileToRead("data/staff.dat", ios::binary);
-    int inputId = 0;
-    short flag = 0;
-    cout << "Enter ID of staff whose data records you want to see: ";
-    cin >> inputId;
-    while (fileToRead.read((char*)&staffRead, sizeof(staffRead)))
+    char userChoice = ' ';
+    cout << "Press '+' to update staff name or press 'Enter' key to retain old data: ";
+    cin.ignore();
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10) // 10 is ASCII value of linefeed (enter key)
     {
-        if (inputId == staffRead.getId())
+        cout << "Enter new name (max. 28 characters): ";
+        cin.ignore();
+        gets_s(name);
+        cin.ignore();
+    }
+    cout << "\nPress '+' to update staff department code or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
+    {
+        cout << "\nDepartment Code\t\tName of Department\n\t1\t\tCleaning\n\t2\t\tManagement\n\t3\t\tOffice work\n\t4\t\tOthers";
+        cout << "\nEnter department code from above list to assign staff to that department: ";
+        cin.ignore();
+        cin >> staffDepartmentCode;
+        cin.ignore();
+        while (staffDepartmentCode > 4 || staffDepartmentCode < 1)
         {
-            ++flag;
+            cout << "\nSorry, we received a wrong department code. Please enter valid department code viz. 1, 2, 3 or 4: ";
+            cin >> staffDepartmentCode;
+        }
+        switch (staffDepartmentCode)
+        {
+        case 1:
+            strcpy_s(staffDepartment, "Cleaning");
+            break;
+        case 2:
+            strcpy_s(staffDepartment, "Management");
+            break;
+        case 3:
+            strcpy_s(staffDepartment, "Office Work");
+            break;
+        case 4:
+            strcpy_s(staffDepartment, "Others");
             break;
         }
     }
-    if (flag != 0)
+    cout << "\nPress '+' to update staff annual salary or press 'Enter' key to retain old data: ";
+    cin.get(userChoice);
+    if (userChoice == '+' && userChoice != 10)
     {
-        staffRead.displayStaffData();
+        cout << "Enter new annual salary (in Rs.): ";
+        cin.ignore();
+        cin >> staffSalary;
+        cin.ignore();
     }
-    else
-    {
-        cout << "No match found.";
-    }
-    basicNavigation();
+    generateStaffId();
+    cout << "\nGenerated ID is " << getId() << ". Please, note it safely as it'll be asked during data modification.";
 }
 
 class Academic
@@ -755,32 +913,7 @@ void viewAcademicReports()
     }
 }
 
-void displayRemoveDataScreen()
-{
-    system("cls");
-    int userChoice = 0;
-    Student schoolStudent;
-    Teacher schoolTeacher;
-    Staff schoolStaff;
-    cout << "1. Remove an existing student";
-    cout << "\n2. Remove an existing teacer";
-    cout << "\n3. Remove an existing staff";
-    cout << "\n\n=> Enter your choice to proceed. For e.g. Press '1' to 'Remove an existing student': ";
-    cin >> userChoice;
-    switch (userChoice)
-    {
-    case 1:
-        removeMember("data/student.dat", "data/temp_student.dat", schoolStudent);
-        break;
-    case 2:
-        removeMember("data/teacher.dat", "data/temp_teacher.dat", schoolTeacher);
-        break;
-    case 3:
-        removeMember("data/staff.dat", "data/temp_staff.dat", schoolStaff);
-        break;
-    }
-}
-
+// displays screen for addition of new student, teacher or staff
 void displayAddDataScreen()
 {
     system("cls");
@@ -807,12 +940,68 @@ void displayAddDataScreen()
     }
 }
 
+void displayRemoveDataScreen()
+{
+    system("cls");
+    int userChoice = 0;
+    Student schoolStudent;
+    Teacher schoolTeacher;
+    Staff schoolStaff;
+    cout << "1. Remove an existing student";
+    cout << "\n2. Remove an existing teacer";
+    cout << "\n3. Remove an existing staff";
+    cout << "\n\n=> Enter your choice to proceed. For e.g. Press '1' to 'Remove an existing student': ";
+    cin >> userChoice;
+    switch (userChoice)
+    {
+    case 1:
+        removeMember("data/student.dat", "data/temp_student.dat", schoolStudent);
+        break;
+    case 2:
+        removeMember("data/teacher.dat", "data/temp_teacher.dat", schoolTeacher);
+        break;
+    case 3:
+        removeMember("data/staff.dat", "data/temp_staff.dat", schoolStaff);
+        break;
+    }
+}
+
+// give user options to choose whose data has to be updated
+void displayUpdateDataScreen()
+{
+    system("cls");
+    int userChoice = 0;
+    Student schoolStudent;
+    Teacher schoolTeacher;
+    Staff schoolStaff;
+    cout << "1. Update data of an existing student";
+    cout << "\n2. Update data of an existing teacher";
+    cout << "\n3. Update data of an existing staff";
+    cout << "\n\n=> Enter your choice to proceed. For e.g. Press '1' to 'Update data of an existing student': ";
+    cin >> userChoice;
+    switch (userChoice)
+    {
+    case 1:
+        updateMemberData("data/student.dat", schoolStudent);
+        break;
+    case 2:
+        updateMemberData("data/teacher.dat", schoolTeacher);
+        break;
+    case 3:
+        updateMemberData("data/staff.dat", schoolStaff);
+        break;
+    }
+}
+
 // displays home screen only if the administrator has entered the correct credentials
 // note: Administrator is anyone using our school management system app
 void HomeScreen()
 {
     system("cls");
     char menuOption;
+    Student schoolStudent;
+    Teacher schoolTeacher;
+    Staff schoolStaff;
     cout << "1. WORK WITH DATA RECORDS\t\t\t\t\t\t2. VIEW DATA RECORDS";
     cout << "\nA. Add a new student, teacher or staff\t\t\t\t\tD. View student data records";
     cout << "\nB. Remove an existing student, teacher or staff \t\t\tE. View teacher data records";
@@ -835,16 +1024,16 @@ void HomeScreen()
         displayRemoveDataScreen();
         break;
     case 'c':
-        cout << "\nWork under progress...";
+        displayUpdateDataScreen();
         break;
     case 'd':
-        viewStudentData();
+        viewData("data/student.dat", schoolStudent);
         break;
     case 'e':
-        viewTeacherData();
+        viewData("data/teacher.dat", schoolTeacher);
         break;
     case 'f':
-        viewStaffData();
+        viewData("data/staff.dat", schoolStaff);
         break;
     case 'g':
         receiveStudentFee();

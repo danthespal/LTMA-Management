@@ -50,45 +50,6 @@ void validateCharInput(char& userInput, char expectedInput[], short expectedInpu
     } while (flag == 0);
 }
 
-// verifies teacher subject code, checks if it is between 1 to 5 or not
-void teacherSubjectCodeVerifier(short teacherSubjectCode[], short inputAtIndex)
-{
-    while (teacherSubjectCode[inputAtIndex] < 1 || teacherSubjectCode[inputAtIndex] > 5)
-    {
-        cout << "Sorry, we received a wrong subject code. Please enter subject code between 1 to 5: ";
-        cin >> teacherSubjectCode[inputAtIndex];
-    }
-}
-
-// sets teacher's subject by using subject code
-// subject codes and the respective subjects: 1. Science   2. Maths    3. English  4. Hindi    5. Social Studies
-void setTeacherSubjects(short teacherSubjectCode[], char teacherSubjects[])
-{
-    for (int i = 0; i < 3; i++)
-    {
-        if (teacherSubjectCode[i] == 1)
-        {
-            strcat_s(teacherSubjects, sizeof teacherSubjects, "Science ");
-        }
-        else if (teacherSubjects[i] == 2)
-        {
-            strcat_s(teacherSubjects, sizeof teacherSubjects, "Maths ");
-        }
-        else if (teacherSubjects[i] == 3)
-        {
-            strcat_s(teacherSubjects, sizeof teacherSubjects, "English ");
-        }
-        else if (teacherSubjects[i] == 4)
-        {
-            strcat_s(teacherSubjects, sizeof teacherSubjects, "Hindi ");
-        }
-        else if (teacherSubjects[i] == 5)
-        {
-            strcat_s(teacherSubjects, sizeof teacherSubjects, "Social Studies ");
-        }
-    }
-}
-
 // validates marks
 void validateSubjectMarks(short marks[], short index)
 {
