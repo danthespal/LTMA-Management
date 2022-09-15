@@ -61,7 +61,7 @@ void validateSubjectMarks(short marks[], short index)
 }
 
 // validate number of days
-void validateDays(short& days)
+void validateDays(float& days)
 {
     while (days > 366 || days < 1)
     {
